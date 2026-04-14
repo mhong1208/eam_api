@@ -11,8 +11,8 @@ async function bootstrap() {
 
   // Cấu hình Swagger
   const config = new DocumentBuilder()
-    .setTitle('WMS API')
-    .setDescription('Tài liệu API cho hệ thống WMS')
+    .setTitle('EAM API')
+    .setDescription('Tài liệu API cho hệ thống EAM')
     .setVersion('1.0')
     .build();
 

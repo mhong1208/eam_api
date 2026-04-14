@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MasterDataModule } from './modules/master-data/master-data.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { MasterDataModule } from './modules/master-data/master-data.module';
     }),
 
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule, MasterDataModule],
+      imports: [ConfigModule, AuthModule, MasterDataModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: configService.get<any>('DB_TYPE'),
