@@ -4,7 +4,7 @@ import { Vendor } from '../entities/vendor.entity';
 
 @Injectable()
 export class VendorRepository extends Repository<Vendor> {
-    constructor(private dataSource: DataSource) {
-        super(Vendor, dataSource.createEntityManager());
-    }
+  constructor(private dataSource: DataSource) {
+    super(Vendor, dataSource.createEntityManager());
+  }
 }

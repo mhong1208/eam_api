@@ -25,7 +25,15 @@ import { DepartmentsService } from './services/departments.service';
 import { DepartmentsController } from './controllers/departments.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Location, AssetCategory, Vendor, Asset, Department])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Location,
+      AssetCategory,
+      Vendor,
+      Asset,
+      Department,
+    ]),
+  ],
   controllers: [
     LocationsController,
     AssetCategoriesController,
@@ -58,5 +66,4 @@ import { DepartmentsController } from './controllers/departments.controller';
     DepartmentsService,
   ],
 })
-export class MasterDataModule { }
-
+export class MasterDataModule {}

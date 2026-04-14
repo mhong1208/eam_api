@@ -4,7 +4,7 @@ import { Asset } from '../entities/asset.entity';
 
 @Injectable()
 export class AssetRepository extends Repository<Asset> {
-    constructor(private dataSource: DataSource) {
-        super(Asset, dataSource.createEntityManager());
-    }
+  constructor(private dataSource: DataSource) {
+    super(Asset, dataSource.createEntityManager());
+  }
 }

@@ -1,19 +1,46 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Put,
+    Delete,
+    Query,
+    UseGuards,
+    UseInterceptors,
+    UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DepartmentsService } from '../services/departments.service';
 import { Department } from '../entities/department.entity';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiBearerAuth,
+    ApiConsumes,
+    ApiBody,
+} from '@nestjs/swagger';
 import { GetDepartmentsDto } from '../dto/get-departments.dto';
-import { CreateDepartmentDto, UpdateDepartmentDto } from '../dto/create-department.dto';
+import {
+    CreateDepartmentDto,
+    UpdateDepartmentDto,
+} from '../dto/create-department.dto';
 import { PageDto } from '../../../core/dto/pagination.dto';
+import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 
 @ApiTags('departments')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('departments')
 export class DepartmentsController {
     constructor(private readonly departmentsService: DepartmentsService) { }
 
     @ApiOperation({ summary: 'Hàm trả về danh sách các phòng ban' })
     @Get()
-    findAll(@Query() getDepartmentsDto: GetDepartmentsDto): Promise<PageDto<Department>> {
+    findAll(
+        @Query() getDepartmentsDto: GetDepartmentsDto,
+    ): Promise<PageDto<Department>> {
         return this.departmentsService.findAll(getDepartmentsDto);
     }
 
@@ -25,7 +52,9 @@ export class DepartmentsController {
 
     @ApiOperation({ summary: 'Hàm tạo mới một phòng ban' })
     @Post()
-    create(@Body() createDepartmentDto: CreateDepartmentDto): Promise<Department> {
+    create(
+        @Body() createDepartmentDto: CreateDepartmentDto,
+    ): Promise<Department> {
         return this.departmentsService.create(createDepartmentDto);
     }
 
@@ -33,7 +62,7 @@ export class DepartmentsController {
     @Put(':id')
     update(
         @Param('id') id: string,
-        @Body() updateDepartmentDto: UpdateDepartmentDto
+        @Body() updateDepartmentDto: UpdateDepartmentDto,
     ): Promise<Department> {
         return this.departmentsService.update(id, updateDepartmentDto);
     }
@@ -42,5 +71,24 @@ export class DepartmentsController {
     @Delete(':id')
     remove(@Param('id') id: string): Promise<void> {
         return this.departmentsService.remove(id);
+    }
+
+    @ApiOperation({ summary: 'Import danh sách phòng ban từ file Excel' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })
+    @Post('import')
+    @UseInterceptors(FileInterceptor('file'))
+    import(@UploadedFile() file: Express.Multer.File): Promise<void> {
+        return this.departmentsService.importExcel(file);
     }
 }

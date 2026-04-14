@@ -30,4 +30,4 @@ import { AuthModule } from './modules/auth/auth.module';
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}

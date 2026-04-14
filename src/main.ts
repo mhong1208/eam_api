@@ -14,6 +14,7 @@ async function bootstrap() {
     .setTitle('EAM API')
     .setDescription('Tài liệu API cho hệ thống EAM')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
