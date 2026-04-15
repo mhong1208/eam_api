@@ -65,6 +65,15 @@ export class AssetsController {
     return this.assetsService.remove(id);
   }
 
+  @ApiOperation({ summary: 'Hàm cập nhật trạng thái một tài sản' })
+  @Put(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() data: { isActive: boolean },
+  ): Promise<Asset> {
+    return this.assetsService.updateStatus(id, data.isActive);
+  }
+
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   async import(@UploadedFile() file: Express.Multer.File) {

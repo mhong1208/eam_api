@@ -13,12 +13,15 @@ import { UpdateAccountDto } from '../dto/update-account.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { PageDto, PageMetaDto } from '../../../core/dto/pagination.dto';
 import * as bcrypt from 'bcrypt';
+import { Department } from 'src/modules/master-data/entities/department.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
   ) { }
 
   async findAll(getDto: GetUsersDto): Promise<PageDto<User>> {
@@ -38,7 +41,6 @@ export class UsersService {
       where.push({});
     }
 
-    // Apply shared filters to all OR conditions
     where.forEach((condition) => {
       if (getDto.role) condition.role = getDto.role;
       if (getDto.isActive !== undefined) condition.isActive = getDto.isActive;
@@ -69,25 +71,31 @@ export class UsersService {
   }
 
   async create(data: CreateUserDto): Promise<User> {
-    const { email, username, password } = data;
+    const { email, fullName, role, departmentId } = data;
+    const department = await this.departmentRepository.findOne({
+      where: { id: departmentId },
+      select: ['code'],
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${departmentId} not found`);
+    }
+    const code = await this.generateUserCode(department.code)
 
     const existingUser = await this.userRepository.findOne({
-      where: [{ email }, { username }],
+      where: [{ email }],
     });
 
     if (existingUser) {
-      throw new ConflictException('Tài khoản hoặc email đã tồn tại');
+      throw new ConflictException('Tài khoản đã tồn tại');
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     const entity = this.userRepository.create({
       ...data,
-      password: hashedPassword,
+      code
     });
 
     const savedUser = await this.userRepository.save(entity);
-    delete savedUser.password;
     return savedUser;
   }
 
@@ -96,23 +104,6 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('Không tìm thấy nhân viên hợp lệ')
-    }
-
-    if (data.email || data.username) {
-      const existingUser = await this.userRepository.findOne({
-        where: [
-          ...(data.email ? [{ email: data.email }] : []),
-          ...(data.username ? [{ username: data.username }] : []),
-        ],
-      });
-
-      if (existingUser && existingUser.id !== id) {
-        throw new ConflictException('Tài khoản hoặc email đã tồn tại');
-      }
-    }
-
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
     }
 
     const updatedUser = await this.userRepository.preload({
@@ -125,7 +116,6 @@ export class UsersService {
     }
 
     const savedUser = await this.userRepository.save(updatedUser);
-    delete savedUser.password;
     return savedUser;
   }
 
@@ -163,5 +153,34 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+  }
+
+  async generateUserCode(departmentCode: string): Promise<string> {
+    const prefix = 'DNC';
+    const fullPrefix = `${prefix}_${departmentCode}`;
+
+    const lastUser = await this.userRepository.findOne({
+      where: {
+        code: Like(`${fullPrefix}%`),
+      },
+      order: { code: 'DESC' },
+    });
+
+    let nextNumber = 1;
+
+    if (lastUser) {
+      const lastCode = lastUser.code;
+
+      const lastNumber = parseInt(
+        lastCode.substring(fullPrefix.length),
+        10,
+      );
+
+      nextNumber = (isNaN(lastNumber) ? 0 : lastNumber) + 1;
+    }
+
+    const numberString = String(nextNumber).padStart(3, '0');
+
+    return `${fullPrefix}${numberString}`;
   }
 }

@@ -79,6 +79,15 @@ export class DepartmentsController {
         return this.departmentsService.remove(id);
     }
 
+    @ApiOperation({ summary: 'Hàm cập nhật trạng thái một phòng ban' })
+    @Put(':id/status')
+    updateStatus(
+        @Param('id') id: string,
+        @Body() data: { isActive: boolean },
+    ): Promise<Department> {
+        return this.departmentsService.updateStatus(id, data.isActive);
+    }
+
     @ApiOperation({ summary: 'Import danh sách phòng ban từ file Excel' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({

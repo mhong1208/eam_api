@@ -57,14 +57,14 @@ export class UsersController {
     return this.usersService.update(id, updateDto);
   }
 
-  @Put(':id/account')
+  @Post(':id/account')
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Cập nhật thông tin tài khoản (không bao gồm mật khẩu)' })
   updateAccount(@Param('id') id: string, @Body() updateDto: UpdateAccountDto) {
     return this.usersService.updateAccount(id, updateDto);
   }
 
-  @Put(':id/reset-password')
+  @Post(':id/reset-password')
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Đặt lại mật khẩu người dùng' })
   resetPassword(@Param('id') id: string, @Body() resetDto: ResetPasswordDto) {

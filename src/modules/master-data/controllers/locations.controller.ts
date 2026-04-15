@@ -67,6 +67,15 @@ export class LocationsController {
     return this.locationsService.remove(id);
   }
 
+  @ApiOperation({ summary: 'Hàm cập nhật trạng thái một vị trí' })
+  @Put(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() data: { isActive: boolean },
+  ): Promise<Location> {
+    return this.locationsService.updateStatus(id, data.isActive);
+  }
+
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   async import(@UploadedFile() file: Express.Multer.File) {

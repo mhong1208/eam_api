@@ -158,4 +158,10 @@ export class VendorsService {
       type: errorRows.length > 0 ? 'error' : 'success',
     };
   }
+
+  async updateStatus(id: string, isActive: boolean): Promise<Vendor> {
+    const entity = await this.findById(id);
+    entity.isActive = isActive;
+    return this.vendorRepository.save(entity);
+  }
 }

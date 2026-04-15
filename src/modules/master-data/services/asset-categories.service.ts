@@ -165,4 +165,10 @@ export class AssetCategoriesService {
       type: errorRows.length > 0 ? 'error' : 'success',
     };
   }
+
+  async updateStatus(id: string, isActive: boolean): Promise<AssetCategory> {
+    const entity = await this.findById(id);
+    entity.isActive = isActive;
+    return this.assetCategoryRepository.save(entity);
+  }
 }

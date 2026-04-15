@@ -65,6 +65,15 @@ export class VendorsController {
     return this.vendorsService.remove(id);
   }
 
+  @ApiOperation({ summary: 'Hàm cập nhật trạng thái một nhà cung cấp' })
+  @Put(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() data: { isActive: boolean },
+  ): Promise<Vendor> {
+    return this.vendorsService.updateStatus(id, data.isActive);
+  }
+
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   async import(@UploadedFile() file: Express.Multer.File) {

@@ -17,7 +17,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto): Promise<any> {
     const { email, username, password, fullName } = registerDto;
@@ -52,7 +52,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { username },
-      select: ['id', 'username', 'email', 'password', 'role', 'isActive'],
+      select: ['id', 'username', 'email', 'password', 'role', 'isActive', 'fullName', 'code'],
     });
 
     if (
@@ -83,7 +83,7 @@ export class AuthService {
   }
 
   async generateUserCode(): Promise<string> {
-    const prefix = 'USER';
+    const prefix = 'DNC';
     const date = new Date();
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');

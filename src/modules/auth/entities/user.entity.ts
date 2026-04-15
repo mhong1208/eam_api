@@ -24,10 +24,10 @@ export class User extends BaseEntity {
     example: 'john_doe',
     description: 'Username of the user',
   })
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   username: string;
 
-  @Column({ select: false })
+  @Column({ select: false, nullable: true })
   password?: string;
 
   @ApiProperty({

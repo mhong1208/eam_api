@@ -168,4 +168,10 @@ export class LocationsService {
       type: errorRows.length > 0 ? 'error' : 'success',
     };
   }
+
+  async updateStatus(id: string, isActive: boolean): Promise<Location> {
+    const entity = await this.findById(id);
+    entity.isActive = isActive;
+    return this.locationRepository.save(entity);
+  }
 }

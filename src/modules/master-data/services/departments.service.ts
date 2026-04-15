@@ -163,4 +163,10 @@ export class DepartmentsService {
             type: errorRows.length > 0 ? 'error' : 'success'
         };
     }
+
+    async updateStatus(id: string, isActive: boolean): Promise<Department> {
+        const entity = await this.findById(id);
+        entity.isActive = isActive;
+        return this.departmentRepository.save(entity);
+    }
 }

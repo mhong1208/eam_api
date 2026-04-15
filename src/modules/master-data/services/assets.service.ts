@@ -174,4 +174,10 @@ export class AssetsService {
       type: errorRows.length > 0 ? 'error' : 'success',
     };
   }
+
+  async updateStatus(id: string, isActive: boolean): Promise<Asset> {
+    const entity = await this.findById(id);
+    entity.isActive = isActive;
+    return this.assetRepository.save(entity);
+  }
 }

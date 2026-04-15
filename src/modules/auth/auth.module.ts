@@ -9,10 +9,11 @@ import { AuthController } from './controllers/auth.controller';
 import { UsersController } from './controllers/users.controller';
 import { User } from './entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { Department } from '../master-data/entities/department.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Department]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -30,4 +31,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [AuthService, UsersService, JwtStrategy],
   exports: [AuthService, UsersService, JwtModule, PassportModule],
 })
-export class AuthModule {}
+export class AuthModule { }
