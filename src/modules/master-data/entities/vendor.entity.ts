@@ -1,7 +1,6 @@
 import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../core/base.entity';
-import { StatusEnum } from '../enums';
 
 @Entity('vendors')
 export class Vendor extends BaseEntity {

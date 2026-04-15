@@ -34,6 +34,10 @@ export class AssetCategoriesService {
       where.code = Like(`%${getDto.code}%`);
     }
 
+    if (getDto.isActive !== undefined) {
+      where.isActive = getDto.isActive;
+    }
+
     const [entities, itemCount] =
       await this.assetCategoryRepository.findAndCount({
         where,
@@ -104,18 +108,18 @@ export class AssetCategoriesService {
       if (rowNumber > 1) {
         const code = row.getCell(1).value?.toString()?.trim();
         const name = row.getCell(2).value?.toString()?.trim();
-        const depreciationMonth = Number(row.getCell(3).value) || undefined;
-        const description = row.getCell(4).value?.toString()?.trim();
+        const description = row.getCell(3).value?.toString()?.trim();
 
         if (!code || !name) {
           errorRows.push({
             row: rowNumber,
             code: code || '',
             name: name || '',
+            description: description || '',
             reason: 'Mã và Tên danh mục tài sản không được để trống',
           });
         } else {
-          validItems.push({ code, name, depreciationMonth, description, _rowNumber: rowNumber });
+          validItems.push({ code, name, description, _rowNumber: rowNumber });
         }
       }
     });
@@ -144,6 +148,7 @@ export class AssetCategoriesService {
           row: item._rowNumber,
           code: item.code,
           name: item.name,
+          description: item.description,
           reason: 'Mã danh mục tài sản đã tồn tại trong hệ thống',
         });
       } else {

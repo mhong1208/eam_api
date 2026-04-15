@@ -16,4 +16,8 @@ export class GetLocationsDto extends PageOptionsDto {
   @ApiPropertyOptional({ description: 'Parent location ID' })
   @IsOptional()
   parentId?: number;
+
+  @ApiPropertyOptional({ description: 'Status' })
+  @IsOptional()
+  isActive?: boolean
 }

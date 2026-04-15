@@ -12,4 +12,8 @@ export class GetAssetCategoriesDto extends PageOptionsDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiPropertyOptional({ description: 'Status' })
+  @IsOptional()
+  isActive?: boolean
 }

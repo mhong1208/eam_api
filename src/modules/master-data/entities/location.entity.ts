@@ -34,7 +34,7 @@ export class Location extends BaseEntity {
 
   @ApiProperty({ example: 1, description: 'Parent location ID' })
   @Column({ nullable: true })
-  parentId: number;
+  parentId: string;
 
   @ApiProperty({
     description: 'Category status',

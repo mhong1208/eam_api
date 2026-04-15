@@ -15,30 +15,25 @@ export class LocationsService {
     return this.locationRepository.find();
   }
 
-  async findAll(getLocationsDto: GetLocationsDto): Promise<PageDto<Location>> {
-    const page = getLocationsDto.pageIndex || 1;
-    const limit = getLocationsDto.pageSize || 10;
-    const skip = (page - 1) * limit;
+  async findAll(getLocationsDto: GetLocationsDto): Promise<any[]> {
+    const { name, code } = getLocationsDto;
 
     const where: FindOptionsWhere<Location> = {};
 
-    if (getLocationsDto.name) {
-      where.name = Like(`%${getLocationsDto.name}%`);
+    if (name) {
+      where.name = Like(`%${name}%`);
     }
 
-    if (getLocationsDto.code) {
-      where.code = Like(`%${getLocationsDto.code}%`);
+    if (code) {
+      where.code = Like(`%${code}%`);
     }
 
-    const [entities, itemCount] = await this.locationRepository.findAndCount({
+    const locations = await this.locationRepository.find({
       where,
       order: { createdAt: 'DESC' },
-      skip: skip,
-      take: limit,
     });
 
-    const pageMetaDto = new PageMetaDto(page, limit, itemCount);
-    return new PageDto(entities, pageMetaDto);
+    return this.buildTree(locations);
   }
 
   async findById(id: string): Promise<Location> {
@@ -88,7 +83,9 @@ export class LocationsService {
     }
   }
 
-  async importExcel(file: Express.Multer.File): Promise<{ message: string; errors: any[]; type: string }> {
+  async importExcel(
+    file: Express.Multer.File,
+  ): Promise<{ message: string; errors: any[]; type: string }> {
     const workbook = new ExcelJS.Workbook();
     const stream = new Readable();
     stream.push(file.buffer);
@@ -106,9 +103,11 @@ export class LocationsService {
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
-        const code = row.getCell(1).value?.toString()?.trim();
-        const name = row.getCell(2).value?.toString()?.trim();
-        const description = row.getCell(3).value?.toString()?.trim();
+        const code = row.getCell(2).value?.toString()?.trim();
+        const name = row.getCell(1).value?.toString()?.trim();
+        const description = row.getCell(5).value?.toString()?.trim();
+        const parentCode = row.getCell(4).value?.toString()?.trim();
+        const locationType = row.getCell(3).value?.toString()?.trim();
 
         if (!code || !name) {
           errorRows.push({
@@ -118,7 +117,14 @@ export class LocationsService {
             reason: 'Mã và Tên vị trí không được để trống',
           });
         } else {
-          validItems.push({ code, name, description, _rowNumber: rowNumber });
+          validItems.push({
+            code,
+            name,
+            description,
+            parentCode,
+            locationType,
+            _rowNumber: rowNumber,
+          });
         }
       }
     });
@@ -131,27 +137,64 @@ export class LocationsService {
       };
     }
 
-    const codesToInsert = validItems.map(item => item.code);
+    const codes = validItems.map(item => item.code);
 
     const existingEntities = await this.locationRepository.find({
-      where: { code: In(codesToInsert) },
-      select: ['code'],
+      where: { code: In(codes) },
     });
-    const existingCodes = existingEntities.map(e => e.code);
+
+    const existingMap = new Map(
+      existingEntities.map(e => [e.code, e]),
+    );
+
+    const parentCodes = validItems
+      .map(i => i.parentCode)
+      .filter(Boolean);
+
+    const parentEntities = await this.locationRepository.find({
+      where: { code: In(parentCodes) },
+      select: ['id', 'code'],
+    });
+
+    const parentMap = new Map(parentEntities.map(p => [p.code, p.id]));
 
     const finalToSave: Partial<Location>[] = [];
 
     for (const item of validItems) {
-      if (existingCodes.includes(item.code)) {
-        errorRows.push({
-          row: item._rowNumber,
+      let parentId;
+
+      if (item.parentCode) {
+        if (!parentMap.has(item.parentCode)) {
+          errorRows.push({
+            row: item._rowNumber,
+            code: item.code,
+            name: item.name,
+            reason: `ParentCode không tồn tại: ${item.parentCode}`,
+          });
+          continue;
+        }
+        parentId = parentMap.get(item.parentCode) ?? null;
+      }
+
+      const existing = existingMap.get(item.code);
+
+      if (existing) {
+        finalToSave.push({
+          id: existing.id,
           code: item.code,
           name: item.name,
-          reason: 'Mã vị trí đã tồn tại trong hệ thống',
+          description: item.description,
+          parentId,
+          locationType: item.locationType || null,
         });
       } else {
-        delete item._rowNumber;
-        finalToSave.push(item);
+        finalToSave.push({
+          code: item.code,
+          name: item.name,
+          description: item.description,
+          parentId,
+          locationType: item.locationType || null,
+        });
       }
     }
 
@@ -162,8 +205,8 @@ export class LocationsService {
     return {
       message:
         errorRows.length > 0
-          ? `Import dữ liệu thất bại ${errorRows.length} dòng.`
-          : `Import dữ liệu thành công ${finalToSave.length} dòng.`,
+          ? `Import hoàn tất: ${finalToSave.length} dòng thành công, ${errorRows.length} dòng lỗi.`
+          : `Import thành công ${finalToSave.length} dòng.`,
       errors: errorRows,
       type: errorRows.length > 0 ? 'error' : 'success',
     };
@@ -173,5 +216,39 @@ export class LocationsService {
     const entity = await this.findById(id);
     entity.isActive = isActive;
     return this.locationRepository.save(entity);
+  }
+
+  private buildTree(data: Location[]): any[] {
+    const map = new Map<string, any>();
+    const roots: any[] = [];
+
+    data.forEach(item => {
+      map.set(item.id, {
+        ...item,
+        children: [],
+        hasChildren: false,
+        level: 0,
+      });
+    });
+
+    data.forEach(item => {
+      const node = map.get(item.id);
+
+      if (item.parentId) {
+        const parent = map.get(item.parentId.toString());
+
+        if (parent) {
+          node.level = parent.level + 1;
+          parent.children.push(node);
+          parent.hasChildren = true;
+        } else {
+          roots.push(node);
+        }
+      } else {
+        roots.push(node);
+      }
+    });
+
+    return roots;
   }
 }

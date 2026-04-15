@@ -36,6 +36,11 @@ export class DepartmentsService {
             where.code = Like(`%${getDepartmentsDto.code}%`);
         }
 
+
+        if (getDepartmentsDto.isActive) {
+            where.isActive = getDepartmentsDto.isActive
+        }
+
         const [entities, itemCount] = await this.departmentRepository.findAndCount({
             where,
             order: { createdAt: 'DESC' },

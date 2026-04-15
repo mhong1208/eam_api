@@ -6,10 +6,10 @@ import { FindOptionsWhere, In, Like } from 'typeorm';
 import { AssetRepository } from '../repositories/asset.repository';
 import * as ExcelJS from 'exceljs';
 import { Readable } from 'stream';
-
+import * as QRCode from 'qrcode';
 @Injectable()
 export class AssetsService {
-  constructor(private readonly assetRepository: AssetRepository) {}
+  constructor(private readonly assetRepository: AssetRepository) { }
 
   async loadAll(): Promise<Asset[]> {
     return this.assetRepository.find({ relations: ['category', 'location', 'vendor'] });
@@ -66,6 +66,12 @@ export class AssetsService {
   }
 
   async create(data: Partial<Asset>): Promise<Asset> {
+    const qrData = JSON.stringify({
+      code: data.code,
+      name: data.name,
+      id: data.id
+    });
+    const qrCode = await QRCode.toDataURL(qrData);
     const entity = this.assetRepository.create(data);
     return this.assetRepository.save(entity);
   }

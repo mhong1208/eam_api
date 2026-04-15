@@ -63,6 +63,10 @@ export class Asset extends BaseEntity {
   @Column({ name: 'purchase_date', type: 'date', nullable: true })
   purchaseDate: Date;
 
+  @ApiProperty({ example: '2024-01-01', description: 'Warranty end date' })
+  @Column({ name: 'warranty_end_date', type: 'date', nullable: true })
+  warrantyEndDate: Date;
+
   @ApiProperty({
     description: 'Category status',
   })

@@ -36,7 +36,7 @@ export class LocationsController {
   @Get()
   findAll(
     @Query() getLocationsDto: GetLocationsDto,
-  ): Promise<PageDto<Location>> {
+  ): Promise<any> {
     return this.locationsService.findAll(getLocationsDto);
   }
 
