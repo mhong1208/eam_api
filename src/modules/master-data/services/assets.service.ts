@@ -2,12 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Asset } from '../entities/asset.entity';
 import { GetAssetsDto } from '../dto/get-assets.dto';
 import { PageDto, PageMetaDto } from '../../../core/dto/pagination.dto';
-import { FindOptionsWhere, Like } from 'typeorm';
+import { FindOptionsWhere, In, Like } from 'typeorm';
 import { AssetRepository } from '../repositories/asset.repository';
+import * as ExcelJS from 'exceljs';
+import { Readable } from 'stream';
 
 @Injectable()
 export class AssetsService {
   constructor(private readonly assetRepository: AssetRepository) {}
+
+  async loadAll(): Promise<Asset[]> {
+    return this.assetRepository.find({ relations: ['category', 'location', 'vendor'] });
+  }
 
   async findAll(getDto: GetAssetsDto): Promise<PageDto<Asset>> {
     const page = getDto.pageIndex || 1;
@@ -84,5 +90,88 @@ export class AssetsService {
     if (result.affected === 0) {
       throw new NotFoundException(`Asset with ID ${id} not found`);
     }
+  }
+
+  async importExcel(file: Express.Multer.File): Promise<{ message: string; errors: any[]; type: string }> {
+    const workbook = new ExcelJS.Workbook();
+    const stream = new Readable();
+    stream.push(file.buffer);
+    stream.push(null);
+
+    await workbook.xlsx.read(stream);
+
+    const worksheet = workbook.getWorksheet(1);
+    if (!worksheet) {
+      throw new Error('Worksheet not found');
+    }
+
+    const validItems: any[] = [];
+    const errorRows: any[] = [];
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        const code = row.getCell(1).value?.toString()?.trim();
+        const name = row.getCell(2).value?.toString()?.trim();
+        const serialNumber = row.getCell(3).value?.toString()?.trim();
+        const purchasePrice = Number(row.getCell(4).value) || undefined;
+        const purchaseDate = row.getCell(5).value ? new Date(row.getCell(5).value as any) : undefined;
+
+        if (!code || !name) {
+          errorRows.push({
+            row: rowNumber,
+            code: code || '',
+            name: name || '',
+            reason: 'Mã và Tên tài sản không được để trống',
+          });
+        } else {
+          validItems.push({ code, name, serialNumber, purchasePrice, purchaseDate, _rowNumber: rowNumber });
+        }
+      }
+    });
+
+    if (validItems.length === 0) {
+      return {
+        message: 'Không có dữ liệu hợp lệ nào được import.',
+        errors: errorRows,
+        type: 'error',
+      };
+    }
+
+    const codesToInsert = validItems.map(item => item.code);
+
+    const existingEntities = await this.assetRepository.find({
+      where: { code: In(codesToInsert) },
+      select: ['code'],
+    });
+    const existingCodes = existingEntities.map(e => e.code);
+
+    const finalToSave: Partial<Asset>[] = [];
+
+    for (const item of validItems) {
+      if (existingCodes.includes(item.code)) {
+        errorRows.push({
+          row: item._rowNumber,
+          code: item.code,
+          name: item.name,
+          reason: 'Mã tài sản đã tồn tại trong hệ thống',
+        });
+      } else {
+        delete item._rowNumber;
+        finalToSave.push(item);
+      }
+    }
+
+    if (finalToSave.length > 0) {
+      await this.assetRepository.save(finalToSave);
+    }
+
+    return {
+      message:
+        errorRows.length > 0
+          ? `Import dữ liệu thất bại ${errorRows.length} dòng.`
+          : `Import dữ liệu thành công ${finalToSave.length} dòng.`,
+      errors: errorRows,
+      type: errorRows.length > 0 ? 'error' : 'success',
+    };
   }
 }

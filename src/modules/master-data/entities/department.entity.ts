@@ -23,4 +23,8 @@ export class Department extends BaseEntity {
 
   @OneToMany(() => User, (user) => user.department)
   users: User[];
+
+  @ApiProperty({ example: true, description: 'Department status' })
+  @Column({ default: true, nullable: true })
+  isActive: boolean
 }

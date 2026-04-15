@@ -6,7 +6,7 @@ import {
     UpdateDepartmentDto,
 } from '../dto/create-department.dto';
 import { PageDto, PageMetaDto } from '../../../core/dto/pagination.dto';
-import { FindOptionsWhere, Like } from 'typeorm';
+import { FindOptionsWhere, In, Like } from 'typeorm';
 import { DepartmentRepository } from '../repositories/department.repository';
 import * as ExcelJS from 'exceljs';
 import { Readable } from 'stream';
@@ -14,6 +14,10 @@ import { Readable } from 'stream';
 @Injectable()
 export class DepartmentsService {
     constructor(private readonly departmentRepository: DepartmentRepository) { }
+
+    async loadAll(): Promise<Department[]> {
+        return this.departmentRepository.find();
+    }
 
     async findAll(
         getDepartmentsDto: GetDepartmentsDto,
@@ -81,7 +85,7 @@ export class DepartmentsService {
         }
     }
 
-    async importExcel(file: Express.Multer.File): Promise<void> {
+    async importExcel(file: Express.Multer.File): Promise<{ message: string; errors: any[]; type: string }> {
         const workbook = new ExcelJS.Workbook();
         const stream = new Readable();
         stream.push(file.buffer);
@@ -94,27 +98,69 @@ export class DepartmentsService {
             throw new Error('Worksheet not found');
         }
 
-        const departments: Partial<Department>[] = [];
+        const validDepartments: any[] = [];
+        const errorRows: any[] = [];
 
         worksheet.eachRow((row, rowNumber) => {
             if (rowNumber > 1) {
-                // Bỏ qua header
-                const code = row.getCell(1).value?.toString();
-                const name = row.getCell(2).value?.toString();
-                const description = row.getCell(3).value?.toString();
+                const code = row.getCell(1).value?.toString()?.trim();
+                const name = row.getCell(2).value?.toString()?.trim();
+                const description = row.getCell(3).value?.toString()?.trim();
 
-                if (code && name) {
-                    departments.push({
-                        code,
-                        name,
-                        description,
+                if (!code || !name) {
+                    errorRows.push({
+                        row: rowNumber,
+                        code: code || '',
+                        name: name || '',
+                        reason: 'Mã và Tên phòng ban không được để trống'
                     });
+                } else {
+                    validDepartments.push({ code, name, description, _rowNumber: rowNumber });
                 }
             }
         });
 
-        if (departments.length > 0) {
-            await this.departmentRepository.save(departments);
+        if (validDepartments.length === 0) {
+            return {
+                message: 'Không có dữ liệu hợp lệ nào được import.',
+                errors: errorRows,
+                type: 'error'
+            };
         }
+
+        const codesToInsert = validDepartments.map(dept => dept.code);
+
+        const existingDepts = await this.departmentRepository.find({
+            where: { code: In(codesToInsert) },
+            select: ['code']
+        });
+        const existingCodes = existingDepts.map(dept => dept.code);
+
+        const finalDepartmentsToSave: Partial<Department>[] = [];
+
+        for (const dept of validDepartments) {
+            if (existingCodes.includes(dept.code)) {
+                errorRows.push({
+                    row: dept._rowNumber,
+                    code: dept.code,
+                    name: dept.name,
+                    description: dept.description,
+                    reason: 'Mã phòng ban đã tồn tại trong hệ thống'
+                });
+            } else {
+                delete dept._rowNumber;
+                finalDepartmentsToSave.push(dept);
+            }
+        }
+
+        if (finalDepartmentsToSave.length > 0) {
+            await this.departmentRepository.save(finalDepartmentsToSave);
+        }
+
+        return {
+            message: errorRows.length > 0 ? `Import dữ liệu thất bại ${errorRows.length} dòng.` : `Import dữ liệu thành công ${finalDepartmentsToSave.length} dòng.`,
+            errors: errorRows,
+            type: errorRows.length > 0 ? 'error' : 'success'
+        };
     }
 }

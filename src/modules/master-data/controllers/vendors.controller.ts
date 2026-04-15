@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { VendorsService } from '../services/vendors.service';
 import { Vendor } from '../entities/vendor.entity';
@@ -15,13 +17,20 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GetVendorsDto } from '../dto/get-vendors.dto';
 import { PageDto } from '../../../core/dto/pagination.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('vendors')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('vendors')
 export class VendorsController {
-  constructor(private readonly vendorsService: VendorsService) {}
+  constructor(private readonly vendorsService: VendorsService) { }
+
+  @ApiOperation({ summary: 'Hàm trả về tất cả nhà cung cấp (không phân trang)' })
+  @Get('load-data')
+  loadAll() {
+    return this.vendorsService.loadAll();
+  }
 
   @ApiOperation({ summary: 'Hàm trả về danh sách các nhà cung cấp' })
   @Get()
@@ -54,5 +63,11 @@ export class VendorsController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
     return this.vendorsService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async import(@UploadedFile() file: Express.Multer.File) {
+    return await this.vendorsService.importExcel(file);
   }
 }

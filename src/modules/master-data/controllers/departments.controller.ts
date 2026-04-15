@@ -36,6 +36,12 @@ import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 export class DepartmentsController {
     constructor(private readonly departmentsService: DepartmentsService) { }
 
+    @ApiOperation({ summary: 'Hàm trả về tất cả phòng ban (không phân trang)' })
+    @Get('load-data')
+    loadAll() {
+        return this.departmentsService.loadAll();
+    }
+
     @ApiOperation({ summary: 'Hàm trả về danh sách các phòng ban' })
     @Get()
     findAll(
@@ -88,7 +94,7 @@ export class DepartmentsController {
     })
     @Post('import')
     @UseInterceptors(FileInterceptor('file'))
-    import(@UploadedFile() file: Express.Multer.File): Promise<void> {
-        return this.departmentsService.importExcel(file);
+    async import(@UploadedFile() file: Express.Multer.File) {
+        return await this.departmentsService.importExcel(file);
     }
 }

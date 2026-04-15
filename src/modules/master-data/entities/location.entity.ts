@@ -35,4 +35,10 @@ export class Location extends BaseEntity {
   @ApiProperty({ example: 1, description: 'Parent location ID' })
   @Column({ nullable: true })
   parentId: number;
+
+  @ApiProperty({
+    description: 'Category status',
+  })
+  @Column({ default: true, nullable: true })
+  isActive: boolean
 }

@@ -9,6 +9,8 @@ import { User } from '../entities/user.entity';
 import { GetUsersDto } from '../dto/get-users.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateAccountDto } from '../dto/update-account.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { PageDto, PageMetaDto } from '../../../core/dto/pagination.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -17,7 +19,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async findAll(getDto: GetUsersDto): Promise<PageDto<User>> {
     const page = getDto.pageIndex || 1;
@@ -92,6 +94,10 @@ export class UsersService {
   async update(id: string, data: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
 
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy nhân viên hợp lệ')
+    }
+
     if (data.email || data.username) {
       const existingUser = await this.userRepository.findOne({
         where: [
@@ -121,6 +127,35 @@ export class UsersService {
     const savedUser = await this.userRepository.save(updatedUser);
     delete savedUser.password;
     return savedUser;
+  }
+
+  async updateAccount(id: string, data: UpdateAccountDto): Promise<User> {
+    const user = await this.findById(id);
+
+    if (data.email || data.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: [
+          ...(data.email ? [{ email: data.email }] : []),
+          ...(data.username ? [{ username: data.username }] : []),
+        ],
+      });
+
+      if (existingUser && existingUser.id !== id) {
+        throw new ConflictException('Tài khoản hoặc email đã tồn tại');
+      }
+    }
+
+    Object.assign(user, data);
+    const savedUser = await this.userRepository.save(user);
+    delete savedUser.password;
+    return savedUser;
+  }
+
+  async resetPassword(id: string, data: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.findById(id);
+    user.password = await bcrypt.hash(data.newPassword, 10);
+    await this.userRepository.save(user);
+    return { message: 'Đặt lại mật khẩu thành công' };
   }
 
   async remove(id: string): Promise<void> {

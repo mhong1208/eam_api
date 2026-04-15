@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AssetCategoriesService } from '../services/asset-categories.service';
 import { AssetCategory } from '../entities/asset-category.entity';
@@ -15,6 +17,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GetAssetCategoriesDto } from '../dto/get-asset-categories.dto';
 import { PageDto } from '../../../core/dto/pagination.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('asset-categories')
 @ApiBearerAuth()
@@ -23,9 +26,15 @@ import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 export class AssetCategoriesController {
   constructor(
     private readonly assetCategoriesService: AssetCategoriesService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Hàm trả về danh sách các loại tài sản' })
+  @Get('load-data')
+  loadAll() {
+    return this.assetCategoriesService.loadAll();
+  }
+
+  @ApiOperation({ summary: 'Hàm trả về danh sách phân trang các loại tài sản' })
   @Get()
   findAll(
     @Query() getDto: GetAssetCategoriesDto,
@@ -58,5 +67,11 @@ export class AssetCategoriesController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
     return this.assetCategoriesService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async import(@UploadedFile() file: Express.Multer.File) {
+    return await this.assetCategoriesService.importExcel(file);
   }
 }

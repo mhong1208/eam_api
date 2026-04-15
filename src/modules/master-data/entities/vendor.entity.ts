@@ -32,14 +32,8 @@ export class Vendor extends BaseEntity {
   address: string;
 
   @ApiProperty({
-    enum: StatusEnum,
-    example: StatusEnum.ACTIVE,
     description: 'Vendor status',
   })
-  @Column({
-    type: 'varchar',
-    enum: StatusEnum,
-    default: StatusEnum.ACTIVE,
-  })
-  status: StatusEnum;
+  @Column({ default: true, nullable: true })
+  isActive: boolean
 }

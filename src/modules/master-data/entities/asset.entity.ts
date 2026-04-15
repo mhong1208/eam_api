@@ -64,14 +64,8 @@ export class Asset extends BaseEntity {
   purchaseDate: Date;
 
   @ApiProperty({
-    enum: AssetStatus,
-    example: AssetStatus.READY,
-    description: 'Asset status',
+    description: 'Category status',
   })
-  @Column({
-    type: 'varchar',
-    enum: AssetStatus,
-    default: AssetStatus.READY,
-  })
-  status: AssetStatus;
+  @Column({ default: true, nullable: true })
+  isActive: boolean
 }

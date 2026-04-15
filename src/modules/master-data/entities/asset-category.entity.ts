@@ -25,14 +25,8 @@ export class AssetCategory extends BaseEntity {
   description: string;
 
   @ApiProperty({
-    enum: StatusEnum,
-    example: StatusEnum.ACTIVE,
     description: 'Category status',
   })
-  @Column({
-    type: 'varchar',
-    enum: StatusEnum,
-    default: StatusEnum.ACTIVE,
-  })
-  status: StatusEnum;
+  @Column({ default: true, nullable: true })
+  isActive: boolean
 }

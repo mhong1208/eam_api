@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { LocationsService } from '../services/locations.service';
 import { Location } from '../entities/location.entity';
@@ -15,13 +17,20 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GetLocationsDto } from '../dto/get-locations.dto';
 import { PageDto } from '../../../core/dto/pagination.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('locations')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('locations')
 export class LocationsController {
-  constructor(private readonly locationsService: LocationsService) {}
+  constructor(private readonly locationsService: LocationsService) { }
+
+  @ApiOperation({ summary: 'Hàm trả về tất cả vị trí (không phân trang)' })
+  @Get('load-data')
+  loadAll() {
+    return this.locationsService.loadAll();
+  }
 
   @ApiOperation({ summary: 'Hàm trả về danh sách các vị trí' })
   @Get()
@@ -56,5 +65,11 @@ export class LocationsController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
     return this.locationsService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async import(@UploadedFile() file: Express.Multer.File) {
+    return await this.locationsService.importExcel(file);
   }
 }
