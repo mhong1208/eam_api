@@ -1,7 +1,7 @@
 import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../core/base.entity';
-import { StatusEnum } from '../enums';
+import { LocationTypeEnum, StatusEnum } from '../enums';
 
 @Entity('locations')
 export class Location extends BaseEntity {
@@ -41,4 +41,12 @@ export class Location extends BaseEntity {
   })
   @Column({ default: true, nullable: true })
   isActive: boolean
+
+  @ApiProperty({ example: 'Location type', description: 'Location type', enum: LocationTypeEnum })
+  @Column({
+    type: 'varchar',
+    enum: LocationTypeEnum,
+    nullable: true
+  })
+  locationType: LocationTypeEnum
 }
