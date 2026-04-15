@@ -18,6 +18,7 @@ import { GetAssetsDto } from '../dto/get-assets.dto';
 import { PageDto } from '../../../core/dto/pagination.dto';
 import { JwtAuthGuard } from '../../../core/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AssetStatus } from '../enums';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -69,9 +70,9 @@ export class AssetsController {
   @Put(':id/status')
   updateStatus(
     @Param('id') id: string,
-    @Body() data: { isActive: boolean },
+    @Body() data: { status: AssetStatus },
   ): Promise<Asset> {
-    return this.assetsService.updateStatus(id, data.isActive);
+    return this.assetsService.updateStatus(id, data.status);
   }
 
   @Post('import')

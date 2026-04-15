@@ -7,6 +7,7 @@ import { AssetRepository } from '../repositories/asset.repository';
 import * as ExcelJS from 'exceljs';
 import { Readable } from 'stream';
 import * as QRCode from 'qrcode';
+import { AssetStatus } from '../enums';
 @Injectable()
 export class AssetsService {
   constructor(private readonly assetRepository: AssetRepository) { }
@@ -181,9 +182,9 @@ export class AssetsService {
     };
   }
 
-  async updateStatus(id: string, isActive: boolean): Promise<Asset> {
+  async updateStatus(id: string, status: AssetStatus): Promise<Asset> {
     const entity = await this.findById(id);
-    entity.isActive = isActive;
+    entity.status = status;
     return this.assetRepository.save(entity);
   }
 }

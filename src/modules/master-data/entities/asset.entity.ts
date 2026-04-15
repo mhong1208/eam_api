@@ -69,7 +69,9 @@ export class Asset extends BaseEntity {
 
   @ApiProperty({
     description: 'Category status',
+    enum: AssetStatus,
+    default: AssetStatus.READY,
   })
-  @Column({ default: true, nullable: true })
-  isActive: boolean
+  @Column({ default: AssetStatus.READY, nullable: true })
+  status: AssetStatus
 }
