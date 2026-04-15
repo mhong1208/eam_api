@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../core/base.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { RoleEnum } from '../enums';
+import { PositionEnum, RoleEnum } from '../enums';
 import { Department } from '../../master-data/entities/department.entity';
 
 @Entity('users')
@@ -51,6 +51,14 @@ export class User extends BaseEntity {
   })
   @Column({ default: RoleEnum.USER })
   role: RoleEnum;
+
+  @ApiProperty({
+    example: 'trưởng phòng',
+    description: 'Chức vụ của người dùng',
+    enum: PositionEnum,
+  })
+  @Column({ default: PositionEnum.STAFF, nullable: true })
+  position: PositionEnum;
 
   @ApiProperty({ description: 'ID phòng ban', required: false })
   @Column({ name: 'department_id', nullable: true })

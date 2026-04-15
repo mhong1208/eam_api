@@ -29,6 +29,13 @@ import { RoleEnum } from '../enums';
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
+  @Get('load-data')
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: 'Lấy danh sách tất cả người dùng' })
+  loadAll() {
+    return this.usersService.loadAll();
+  }
+
   @Get()
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng' })

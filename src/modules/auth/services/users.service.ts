@@ -24,6 +24,10 @@ export class UsersService {
     private readonly departmentRepository: Repository<Department>,
   ) { }
 
+  async loadAll(): Promise<User[]> {
+    return this.userRepository.find();
+  }
+
   async findAll(getDto: GetUsersDto): Promise<PageDto<User>> {
     const page = getDto.pageIndex || 1;
     const limit = getDto.pageSize || 10;

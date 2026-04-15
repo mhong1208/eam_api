@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { TransferHandoverModule } from './modules/transfer-handover/transfer-handover.module';
 
 @Module({
   imports: [
@@ -26,6 +27,10 @@ import { AuthModule } from './modules/auth/auth.module';
         logging: configService.get<string>('LOGGING') === 'true',
       }),
     }),
+    
+    AuthModule,
+    MasterDataModule,
+    TransferHandoverModule,
   ],
   controllers: [],
   providers: [],
